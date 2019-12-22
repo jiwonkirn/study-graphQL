@@ -4,11 +4,51 @@ import {
 
 // String, Boolean, Int, Float, ID,
 
+// Demo user data
+const users = [{
+    id: '1',
+    name: 'jiwon',
+    email: 'jhd1925@gmail.com',
+    age: 28
+  },
+  {
+    id: '2',
+    name: 'minho',
+    email: 'mino@gmail.com'
+  },
+  {
+    id: '3',
+    name: 'mike',
+    email: 'mike@gmail.com'
+  },
+]
+
+const posts = [{
+    id: '1',
+    title: 'react',
+    body: 'I learn React in the first class.',
+    published: false
+  },
+  {
+    id: '2',
+    title: 'html',
+    body: 'I learn Html in the second class.',
+    published: true
+  },
+  {
+    id: '3',
+    title: 'javascript',
+    body: 'I learn Javascript in the third class.',
+    published: false
+  },
+
+]
+
 // Type definition (schema)
 const typeDefs = `
   type Query {
-    greeting(name: String, position: String): String!
-    add(a: Float!, b: Float!): Float!
+    users(query: String): [User!]!
+    posts(query: String): [Post!]!
     me: User!
     post: Post!
   }
@@ -31,15 +71,22 @@ const typeDefs = `
 // Resolvers
 const resolvers = {
   Query: {
-    greeting(parent, args, ctx, info) {
-      if (args.name && args.position) {
-        return `Hello, ${args.name}! You are my favorite ${args.position}`
-      } else {
-        return `Hello`
-      }
+    users(parent, args, ctx, info) {
+      if (!args.query) return users
+      return users.filter((user) => {
+        return user.name.toLowerCase().includes(args.query.toLowerCase())
+      })
     },
-    add(parent, args) {
-      return args.a + args.b
+    posts(parent, args, ctx, info) {
+      if (!args.query) return posts
+      const query = args.query.toLowerCase()
+      return posts.filter(({
+          title,
+          body
+        }) =>
+        title.toLowerCase().includes(query) ||
+        body.toLowerCase().includes(query)
+      )
     },
     me() {
       return {
