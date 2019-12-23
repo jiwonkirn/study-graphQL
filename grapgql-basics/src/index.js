@@ -1,48 +1,50 @@
-import {
-  GraphQLServer
-} from "graphql-yoga";
+import { GraphQLServer } from "graphql-yoga";
 
 // String, Boolean, Int, Float, ID,
 
 // Demo user data
-const users = [{
-    id: '1',
-    name: 'jiwon',
-    email: 'jhd1925@gmail.com',
+const users = [
+  {
+    id: "1",
+    name: "jiwon",
+    email: "jhd1925@gmail.com",
     age: 28
   },
   {
-    id: '2',
-    name: 'minho',
-    email: 'mino@gmail.com'
+    id: "2",
+    name: "minho",
+    email: "mino@gmail.com"
   },
   {
-    id: '3',
-    name: 'mike',
-    email: 'mike@gmail.com'
-  },
-]
+    id: "3",
+    name: "mike",
+    email: "mike@gmail.com"
+  }
+];
 
-const posts = [{
-    id: '1',
-    title: 'react',
-    body: 'I learn React in the first class.',
-    published: false
+const posts = [
+  {
+    id: "1",
+    title: "react",
+    body: "I learn React in the first class.",
+    published: false,
+    author: "1"
   },
   {
-    id: '2',
-    title: 'html',
-    body: 'I learn Html in the second class.',
-    published: true
+    id: "2",
+    title: "html",
+    body: "I learn Html in the second class.",
+    published: true,
+    author: "2"
   },
   {
-    id: '3',
-    title: 'javascript',
-    body: 'I learn Javascript in the third class.',
-    published: false
-  },
-
-]
+    id: "3",
+    title: "javascript",
+    body: "I learn Javascript in the third class.",
+    published: false,
+    author: "1"
+  }
+];
 
 // Type definition (schema)
 const typeDefs = `
@@ -58,6 +60,7 @@ const typeDefs = `
     name: String!
     email: String!
     age: Int
+    posts: [Post!]!
   }
 
   type Post {
@@ -65,6 +68,7 @@ const typeDefs = `
     title: String!
     body: String!
     published: Boolean!
+    author: User!
   }
 `;
 
@@ -72,21 +76,19 @@ const typeDefs = `
 const resolvers = {
   Query: {
     users(parent, args, ctx, info) {
-      if (!args.query) return users
-      return users.filter((user) => {
-        return user.name.toLowerCase().includes(args.query.toLowerCase())
-      })
+      if (!args.query) return users;
+      return users.filter(user => {
+        return user.name.toLowerCase().includes(args.query.toLowerCase());
+      });
     },
     posts(parent, args, ctx, info) {
-      if (!args.query) return posts
-      const query = args.query.toLowerCase()
-      return posts.filter(({
-          title,
-          body
-        }) =>
-        title.toLowerCase().includes(query) ||
-        body.toLowerCase().includes(query)
-      )
+      if (!args.query) return posts;
+      const query = args.query.toLowerCase();
+      return posts.filter(
+        ({ title, body }) =>
+          title.toLowerCase().includes(query) ||
+          body.toLowerCase().includes(query)
+      );
     },
     me() {
       return {
@@ -103,6 +105,16 @@ const resolvers = {
         body: "let introduce How to build React App",
         published: true
       };
+    }
+  },
+  Post: {
+    author(parent, args, ctx, info) {
+      return users.find(user => user.id === parent.author);
+    }
+  },
+  User: {
+    posts(parent, args, ctx, info) {
+      return posts.filter(post => post.author === parent.id);
     }
   }
 };
