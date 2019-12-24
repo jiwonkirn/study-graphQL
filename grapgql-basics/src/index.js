@@ -1,4 +1,5 @@
 import { GraphQLServer } from "graphql-yoga";
+import uuidv4 from "uuid/v4";
 
 // String, Boolean, Int, Float, ID,
 
@@ -89,6 +90,12 @@ const typeDefs = `
     post: Post!
   }
 
+  type Mutation {
+    createUser(name: String!, email: String!, age: Int): User!
+    createPost(title: String!, body: String!, published: Boolean!, author: ID!): Post!
+    createComment(text: String!, post: ID!, author: ID!): Comment!
+  }
+
   type User {
     id: ID!
     name: String!
@@ -156,6 +163,58 @@ const resolvers = {
         body: "let introduce How to build React App",
         published: true
       };
+    }
+  },
+  Mutation: {
+    createUser(parent, args, ctx, info) {
+      const emailTaken = users.some(user => user.email === args.email);
+      if (emailTaken) throw new Error("Email taken.");
+
+      const user = {
+        id: uuidv4(),
+        name: args.name,
+        email: args.email,
+        age: args.age
+      };
+      users.push(user);
+
+      return user;
+    },
+    createPost(parent, args, ctx, info) {
+      const userExist = users.some(user => user.id === args.author);
+      if (!userExist) throw new Error("User not found.");
+
+      const post = {
+        id: uuidv4(),
+        title: args.title,
+        body: args.body,
+        published: args.published,
+        author: args.author
+      };
+
+      posts.push(post);
+
+      return post;
+    },
+    createComment(parent, args, ctx, info) {
+      const userExist = users.some(user => user.id === args.author);
+      if (!userExist) throw new Error("Unable to find user");
+
+      const postConfirm = posts.some(
+        post => post.id === args.post && post.published
+      );
+      if (!postConfirm) throw new Error("Post is not exist or published");
+
+      const comment = {
+        id: uuidv4(),
+        text: args.text,
+        author: args.author,
+        post: args.post
+      };
+
+      comments.push(comment);
+
+      return comment;
     }
   },
   Post: {
