@@ -1,11 +1,12 @@
-import { GraphQLServer } from "graphql-yoga";
+import {
+  GraphQLServer
+} from "graphql-yoga";
 import uuidv4 from "uuid/v4";
 
 // String, Boolean, Int, Float, ID,
 
 // Demo user data
-const users = [
-  {
+let users = [{
     id: "1",
     name: "jiwon",
     email: "jhd1925@gmail.com",
@@ -23,8 +24,7 @@ const users = [
   }
 ];
 
-const posts = [
-  {
+let posts = [{
     id: "1",
     title: "react",
     body: "I learn React in the first class.",
@@ -47,8 +47,7 @@ const posts = [
   }
 ];
 
-const comments = [
-  {
+let comments = [{
     id: "1",
     text: "Good post!",
     post: "1",
@@ -92,8 +91,11 @@ const typeDefs = `
 
   type Mutation {
     createUser(data: CreateUserInput!): User!
+    deleteUser(id: ID!): User!
     createPost(data: CreatePostInput!): Post!
+    deletePost(id: ID!): Post!
     createComment(data: CreateCommentInput!): Comment!
+    deleteComment(id: ID!): Comment!
   }
 
   input CreateUserInput {
@@ -154,17 +156,23 @@ const resolvers = {
       if (!args.query) return posts;
       const query = args.query.toLowerCase();
       return posts.filter(
-        ({ title, body }) =>
-          title.toLowerCase().includes(query) ||
-          body.toLowerCase().includes(query)
+        ({
+          title,
+          body
+        }) =>
+        title.toLowerCase().includes(query) ||
+        body.toLowerCase().includes(query)
       );
     },
     comments(parent, args, ctx, info) {
       if (!args.query) return comments;
       const query = args.query.toLowerCase();
       return comments.filter(
-        ({ id, text }) =>
-          id.toLowerCase().includes(query) || text.toLowerCase().includes(query)
+        ({
+          id,
+          text
+        }) =>
+        id.toLowerCase().includes(query) || text.toLowerCase().includes(query)
       );
     },
     me() {
@@ -197,6 +205,23 @@ const resolvers = {
 
       return user;
     },
+    deleteUser(parent, args, ctx, info) {
+      const userIndex = users.findIndex(user => user.id === args.id);
+      if (userIndex < 0) throw new Error("Unable to find user");
+
+      const [deletedUser] = users.splice(userIndex, 1);
+
+      posts = posts.filter(post => {
+        const match = post.author === deletedUser.id;
+        if (match)
+          comments = comments.filter(comment => comment.post !== post.id);
+
+        return !match;
+      });
+      comments = comments.filter(comment => comment.author !== deletedUser.id);
+
+      return deletedUser;
+    },
     createPost(parent, args, ctx, info) {
       const userExist = users.some(user => user.id === args.data.author);
       if (!userExist) throw new Error("User not found.");
@@ -209,6 +234,16 @@ const resolvers = {
       posts.push(post);
 
       return post;
+    },
+    deletePost(parent, args, ctx, info) {
+      const postIndex = posts.findIndex(post => post.id === args.id);
+      if (postIndex < 0) throw new Error("Unable to find a post");
+
+      const [deletedPost] = posts.splice(postIndex, 1);
+
+      comments = comments.filter(comment => comment.post !== deletedPost.id);
+
+      return deletedPost;
     },
     createComment(parent, args, ctx, info) {
       const userExist = users.some(user => user.id === args.data.author);
@@ -227,6 +262,16 @@ const resolvers = {
       comments.push(comment);
 
       return comment;
+    },
+    deleteComment(parent, args, ctx, info) {
+      const commentIndex = comments.findIndex(
+        comment => comment.id === args.id
+      );
+      if (commentIndex < 0) throw new Error("Comment not found.");
+
+      const [deletedComment] = comments.splice(commentIndex, 1);
+
+      return deletedComment;
     }
   },
   Post: {
